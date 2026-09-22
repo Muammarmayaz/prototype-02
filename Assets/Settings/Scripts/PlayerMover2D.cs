@@ -6,9 +6,14 @@ public class PlayerMover2D : MonoBehaviour
     [SerializeField] private float moveSpeed = 5f;
     [SerializeField] private float jumpForce = 12f;
 
+    [SerializeField] private Transform groundCheck;
+    [SerializeField] private float checkRadius = 0.15f;
+    [SerializeField] private LayerMask groundLayer;
+
     private Rigidbody2D rb;
     private float moveInput;
     private bool jumpRequested;
+    private bool isGrounded;
 
     private void Awake()
     {
@@ -31,12 +36,30 @@ public class PlayerMover2D : MonoBehaviour
 
     private void FixedUpdate()
     {
+        isGrounded = Physics2D.OverlapCircle(groundCheck.position, checkRadius, groundLayer);
+
         rb.linearVelocity = new Vector2(moveInput * moveSpeed, rb.linearVelocity.y);
 
-        if (jumpRequested)
+        if (jumpRequested && isGrounded)
         {
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
-            jumpRequested = false;
         }
+
+        jumpRequested = false;
+    }
+
+    private void OnTriggerEnter2D(Collider2D other)
+    {
+        if (other.TryGetComponent<ICollectible>(out var collectible))
+        {
+            collectible.OnCollect();
+        }
+    }
+
+    private void OnDrawGizmosSelected()
+    {
+        if (groundCheck == null) return;
+        Gizmos.color = Color.green;
+        Gizmos.DrawWireSphere(groundCheck.position, checkRadius);
     }
 }
